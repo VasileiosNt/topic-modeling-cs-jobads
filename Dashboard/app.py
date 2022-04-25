@@ -1,4 +1,4 @@
-import pandas as pd 
+import pandas as pd
 import plotly.graph_objs as go
 import nltk
 import unicodedata
@@ -16,52 +16,119 @@ import dash_table
 import dash_auth
 
 
-
-VALID_USERNAME_PASSWORD_PAIRS = {
-    'erasmus': 'sn$%54$%'
-}
+VALID_USERNAME_PASSWORD_PAIRS = {"erasmus": "sn$%54$%"}
 
 PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
-df = pd.read_csv('data/all_description.csv')
-country_job_counts_df= pd.read_csv('data/job_counts_country.csv')
-bigram_df = pd.read_csv('data/bigrams.csv')
-top_companies_df = pd.read_csv('data/recruiters_by_jobposting.csv',names=['Company','Counts'])
-map_token = 'pk.eyJ1IjoidmFzaWxpc250b3VzaXMiLCJhIjoiY2tjaHViMW1lMTVjaDJ6bm5kNW4xZHZ5NCJ9.nSmlFX-NDiWfenQAhE8c3Q'
+df = pd.read_csv("data/all_description.csv")
+country_job_counts_df = pd.read_csv("data/job_counts_country.csv")
+bigram_df = pd.read_csv("data/bigrams.csv")
+top_companies_df = pd.read_csv(
+    "data/recruiters_by_jobposting.csv", names=["Company", "Counts"]
+)
+map_token = "pk.eyJ1IjoidmFzaWxpc250b3VzaXMiLCJhIjoiY2tjaHViMW1lMTVjaDJ6bm5kNW4xZHZ5NCJ9.nSmlFX-NDiWfenQAhE8c3Q"
 
-ADDITIONAL_STOPWORDS = ['this','security','look','with','look','forward','your','more','than','this position','more','cyber security','information security','working with','look forward','your application','forward','receiving','experience with','this position','years','experience','cyber','role','credit','suisse','flexible','working','work','closely','good','knowledge','information','technology','best','must','help','including','cantidate','relevant','within','provide','reqiuired','strong','please','student','candidate','deloitte','position','able','und','die','mit','un','wir','fr','join','u','give','unsere','mitarbeitenden','region', 'zurichzurich','united','nation','your application','well'
+ADDITIONAL_STOPWORDS = [
+    "this",
+    "security",
+    "look",
+    "with",
+    "look",
+    "forward",
+    "your",
+    "more",
+    "than",
+    "this position",
+    "more",
+    "cyber security",
+    "information security",
+    "working with",
+    "look forward",
+    "your application",
+    "forward",
+    "receiving",
+    "experience with",
+    "this position",
+    "years",
+    "experience",
+    "cyber",
+    "role",
+    "credit",
+    "suisse",
+    "flexible",
+    "working",
+    "work",
+    "closely",
+    "good",
+    "knowledge",
+    "information",
+    "technology",
+    "best",
+    "must",
+    "help",
+    "including",
+    "cantidate",
+    "relevant",
+    "within",
+    "provide",
+    "reqiuired",
+    "strong",
+    "please",
+    "student",
+    "candidate",
+    "deloitte",
+    "position",
+    "able",
+    "und",
+    "die",
+    "mit",
+    "un",
+    "wir",
+    "fr",
+    "join",
+    "u",
+    "give",
+    "unsere",
+    "mitarbeitenden",
+    "region",
+    "zurichzurich",
+    "united",
+    "nation",
+    "your application",
+    "well",
 ]
+
+
 def basic_clean(text):
-  """
-  A simple function to clean up the data. All the words that
-  are not designated as a stop word is then lemmatized after
-  encoding and basic regex parsing are performed.
-  """
-  wnl = nltk.stem.WordNetLemmatizer()
-  stopwords = nltk.corpus.stopwords.words('english') + ADDITIONAL_STOPWORDS
-  text = (unicodedata.normalize('NFKD', text)
-    .encode('ascii', 'ignore')
-    .decode('utf-8', 'ignore')
-    .lower())
-  words = re.sub(r'[^\w\s]', '', text).split()
-  return [wnl.lemmatize(word) for word in words if word not in stopwords]
+    """
+    A simple function to clean up the data. All the words that
+    are not designated as a stop word is then lemmatized after
+    encoding and basic regex parsing are performed.
+    """
+    wnl = nltk.stem.WordNetLemmatizer()
+    stopwords = nltk.corpus.stopwords.words("english") + ADDITIONAL_STOPWORDS
+    text = (
+        unicodedata.normalize("NFKD", text)
+        .encode("ascii", "ignore")
+        .decode("utf-8", "ignore")
+        .lower()
+    )
+    words = re.sub(r"[^\w\s]", "", text).split()
+    return [wnl.lemmatize(word) for word in words if word not in stopwords]
 
 
-df['Description'] = df['Description'].apply(basic_clean)
-
+df["Description"] = df["Description"].apply(basic_clean)
 
 
 for stopword in ADDITIONAL_STOPWORDS:
     STOPWORDS.add(stopword)
 
 
-
-
-
-
 def plotly_wordcloud(dataframe):
-    description_text = list(dataframe['Description'].dropna().values)
+    description_text = list(dataframe["Description"].dropna().values)
     text = " ".join(str(x) for x in description_text)
-    word_cloud = WordCloud(stopwords=set(STOPWORDS),max_words=100,max_font_size=90,scale=1)
+    word_cloud = WordCloud(
+        stopwords=set(STOPWORDS), max_words=100, max_font_size=90, scale=1
+    )
     word_cloud.generate(text)
 
     word_list = []
@@ -78,7 +145,7 @@ def plotly_wordcloud(dataframe):
         position_list.append(position)
         orientation_list.append(orientation)
         color_list.append(color)
-    
+
     print(position_list)
     x_arr = []
     y_arr = []
@@ -99,28 +166,29 @@ def plotly_wordcloud(dataframe):
         textposition="top center",
         hovertext=["{0} - {1}".format(w, f) for w, f in zip(word_list, freq_list)],
         mode="text",
-        text=word_list,)
+        text=word_list,
+    )
 
     layout = go.Layout(
-            {
-                "xaxis": {
-                    "showgrid": False,
-                    "showticklabels": False,
-                    "zeroline": False,
-                    "automargin": True,
-                    "range": [-100, 250],
-                },
-                "yaxis": {
-                    "showgrid": False,
-                    "showticklabels": False,
-                    "zeroline": False,
-                    "automargin": True,
-                    "range": [-100, 450],
-                },
-                "margin": dict(t=20, b=20, l=10, r=10, pad=4),
-                "hovermode": "closest",
-            }
-        )
+        {
+            "xaxis": {
+                "showgrid": False,
+                "showticklabels": False,
+                "zeroline": False,
+                "automargin": True,
+                "range": [-100, 250],
+            },
+            "yaxis": {
+                "showgrid": False,
+                "showticklabels": False,
+                "zeroline": False,
+                "automargin": True,
+                "range": [-100, 450],
+            },
+            "margin": dict(t=20, b=20, l=10, r=10, pad=4),
+            "hovermode": "closest",
+        }
+    )
 
     wordcloud_figure_data = {"data": [trace], "layout": layout}
     word_list_top = word_list[:25]
@@ -155,9 +223,7 @@ NAVBAR = dbc.Navbar(
             dbc.Row(
                 [
                     dbc.Col(html.Img(src=PLOTLY_LOGO, height="30px")),
-                    dbc.Col(
-                        dbc.NavbarBrand("Cyber Security Jobs", className="ml-2")
-                    ),
+                    dbc.Col(dbc.NavbarBrand("Cyber Security Jobs", className="ml-2")),
                 ],
                 align="center",
                 no_gutters=True,
@@ -202,9 +268,12 @@ WORDCLOUD_PLOTS = [
         style={"display": "none"},
     ),
     dcc.Dropdown(
-            id="job-drop", options= [{'label': 'Test','value':'A'}],value='Test',clearable=False, style={"marginBottom": 50, "font-size": 12}
-        ),
-     
+        id="job-drop",
+        options=[{"label": "Test", "value": "A"}],
+        value="Test",
+        clearable=False,
+        style={"marginBottom": 50, "font-size": 12},
+    ),
     dbc.CardBody(
         [
             dbc.Row(
@@ -256,7 +325,7 @@ WORDCLOUD_PLOTS = [
 
 TOP_BIGRAM_PLOT = [
     dbc.CardHeader(html.H5("Top bigrams found in the database")),
-     dbc.CardBody(
+    dbc.CardBody(
         [
             dcc.Loading(
                 id="loading-bigrams-scatter",
@@ -267,7 +336,7 @@ TOP_BIGRAM_PLOT = [
                         color="warning",
                         style={"display": "none"},
                     ),
-                     dcc.Graph(id="bigrams-scatter"),
+                    dcc.Graph(id="bigrams-scatter"),
                 ],
                 type="default",
             )
@@ -277,12 +346,9 @@ TOP_BIGRAM_PLOT = [
 ]
 
 
-
-
-
-
-GEO_MAP_PLOTS  = [
-    dbc.CardHeader(html.H5('Job Counts per Country')),dbc.CardBody(
+GEO_MAP_PLOTS = [
+    dbc.CardHeader(html.H5("Job Counts per Country")),
+    dbc.CardBody(
         [
             dcc.Loading(
                 id="loading-geomap",
@@ -293,7 +359,7 @@ GEO_MAP_PLOTS  = [
                         color="warning",
                         style={"display": "none"},
                     ),
-                     dcc.Graph(id="geomap"),
+                    dcc.Graph(id="geomap"),
                 ],
                 type="default",
             )
@@ -302,66 +368,72 @@ GEO_MAP_PLOTS  = [
     ),
 ]
 
-BODY = dbc.Container([dbc.Card(WORDCLOUD_PLOTS),dbc.Card(TOP_BIGRAM_PLOT),dbc.Card(TOP_COMPANIES_PLOT ),dbc.Card(GEO_MAP_PLOTS),])
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-auth = dash_auth.BasicAuth(
-    app,
-    VALID_USERNAME_PASSWORD_PAIRS
+BODY = dbc.Container(
+    [
+        dbc.Card(WORDCLOUD_PLOTS),
+        dbc.Card(TOP_BIGRAM_PLOT),
+        dbc.Card(TOP_COMPANIES_PLOT),
+        dbc.Card(GEO_MAP_PLOTS),
+    ]
 )
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+auth = dash_auth.BasicAuth(app, VALID_USERNAME_PASSWORD_PAIRS)
 app.layout = html.Div(children=[NAVBAR, BODY])
 
+
 @app.callback(
-  [
+    [
         Output("job-wordcloud", "figure"),
         Output("frequency_figure", "figure"),
         Output("job-treemap", "figure"),
         Output("no-data-alert", "style"),
     ],
-    [Input('job-drop',"value")],
+    [Input("job-drop", "value")],
 )
-
 def generate_wordcloud_graph(x):
-    wordcloud, frequency_figure,treemap = plotly_wordcloud(df)
-    alert_style = {'display': 'none'}
+    wordcloud, frequency_figure, treemap = plotly_wordcloud(df)
+    alert_style = {"display": "none"}
     return (wordcloud, frequency_figure, treemap, alert_style)
 
-@app.callback(
-    
-Output('bigrams-scatter','figure'), 
-[Input('job-drop',"value")],)
 
+@app.callback(
+    Output("bigrams-scatter", "figure"),
+    [Input("job-drop", "value")],
+)
 def populate_bigram_scatter(x):
     fig = px.scatter(
         bigram_df,
-        x= 'Word',
-        y='Frequency',
-        hover_name='Word',
-        text = 'Word',
-        size='Frequency',
-        color='Word',
+        x="Word",
+        y="Frequency",
+        hover_name="Word",
+        text="Word",
+        size="Frequency",
+        color="Word",
         size_max=45,
-        template='plotly_white',
+        template="plotly_white",
         title="Bigram similarity and frequency",
         color_continuous_scale=px.colors.sequential.Sunsetdark,
-
     )
     fig.update_traces(marker=dict(line=dict(width=1, color="Gray")))
     fig.update_xaxes(visible=False)
     fig.update_yaxes(visible=False)
     return fig
 
+
 @app.callback(
-    [Output('company-sample','figure'),Output("no-data-alert-company", "style")],
-    [Input('job-drop','value')],)
+    [Output("company-sample", "figure"), Output("no-data-alert-company", "style")],
+    [Input("job-drop", "value")],
+)
 def top_companies_histogram(x):
     top_20_companies = top_companies_df[0:20]
     data = [
-        {'x':top_20_companies['Company'],
-        'y':top_20_companies['Counts'],
-        'text': top_20_companies['Company'],
-        "textposition": "auto",
-        "type": "bar",
-        "name": "",
+        {
+            "x": top_20_companies["Company"],
+            "y": top_20_companies["Counts"],
+            "text": top_20_companies["Company"],
+            "textposition": "auto",
+            "type": "bar",
+            "name": "",
         }
     ]
     layout = {
@@ -371,70 +443,62 @@ def top_companies_histogram(x):
     }
 
     return [{"data": data, "layout": layout}, {"display": "none"}]
-    
+
+
 @app.callback(
-    Output('geomap','figure'),
-    [Input('job-drop','value')],
+    Output("geomap", "figure"),
+    [Input("job-drop", "value")],
 )
-def generate_map (x):
-    fig=go.Figure()
-    fig.add_trace(go.Choropleth(
-        locationmode='country names',
-        locations = country_job_counts_df['Country'],
-        z= country_job_counts_df['JobCounts'],
-        text= country_job_counts_df['Country'],
-        colorscale = [[0,'rgb(0, 0, 0)'],[1,'rgb(0, 0, 0)']],
-        autocolorscale = False,
-        showscale = False,
-        geo = 'geo2',
-        
-        )),
-    fig.add_trace(go.Scattergeo(
-        lon = [15.820312500000002],
-        lat = [49.38237278700955],
-        text = ['Europe'],
-        mode = 'text',
-        showlegend = False,
-        geo = 'geo2'
-        
-    ))
+def generate_map(x):
+    fig = go.Figure()
+    fig.add_trace(
+        go.Choropleth(
+            locationmode="country names",
+            locations=country_job_counts_df["Country"],
+            z=country_job_counts_df["JobCounts"],
+            text=country_job_counts_df["Country"],
+            colorscale=[[0, "rgb(0, 0, 0)"], [1, "rgb(0, 0, 0)"]],
+            autocolorscale=False,
+            showscale=False,
+            geo="geo2",
+        )
+    ),
+    fig.add_trace(
+        go.Scattergeo(
+            lon=[15.820312500000002],
+            lat=[49.38237278700955],
+            text=["Europe"],
+            mode="text",
+            showlegend=False,
+            geo="geo2",
+        )
+    )
 
     fig.update_layout(
-    title = go.layout.Title(
-        text = 'Jobs per Country'),
-        geo = go.layout.Geo(
-            resolution = 50,
-            scope = 'europe',
-            showframe = False,
-            showcoastlines = True,
-            landcolor = "rgb(111, 111, 111)",
-            countrycolor = "white" ,
-            coastlinecolor = "white",
-            lonaxis_range= [ -15.0, -5.0 ],
-            lataxis_range= [ 0.0, 12.0 ],
-            domain = dict(x = [ 0, 1 ], y = [ 0, 1 ]),
-            
-             
-            
-           
-            
-    ),
-    geo2 = go.layout.Geo(
-        scope = 'europe',
-        showframe = False,
-        landcolor = "rgb(229, 229, 229)",
-        showcountries = False,
-        domain = dict(x = [ 0, 0.6 ], y = [ 0, 0.6 ]),
-        bgcolor = 'rgba(255, 255, 255, 0.0)',
-        
-      
-        
-    ),
-    legend_traceorder = 'reversed',
+        title=go.layout.Title(text="Jobs per Country"),
+        geo=go.layout.Geo(
+            resolution=50,
+            scope="europe",
+            showframe=False,
+            showcoastlines=True,
+            landcolor="rgb(111, 111, 111)",
+            countrycolor="white",
+            coastlinecolor="white",
+            lonaxis_range=[-15.0, -5.0],
+            lataxis_range=[0.0, 12.0],
+            domain=dict(x=[0, 1], y=[0, 1]),
+        ),
+        geo2=go.layout.Geo(
+            scope="europe",
+            showframe=False,
+            landcolor="rgb(229, 229, 229)",
+            showcountries=False,
+            domain=dict(x=[0, 0.6], y=[0, 0.6]),
+            bgcolor="rgba(255, 255, 255, 0.0)",
+        ),
+        legend_traceorder="reversed",
     )
     return fig
-    
-
 
 
 if __name__ == "__main__":
